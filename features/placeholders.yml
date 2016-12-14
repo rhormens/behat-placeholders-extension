@@ -1,0 +1,18 @@
+# used on scenarios tagged @placeholders
+default: 
+  placeholders:
+    # replaces ${placeholder1}
+    placeholder1:
+        # used if no --environment/-e parameter was provided, or if the provided
+        # parameter doesn't have a specific key on this yml file
+        $default:
+            # used on scenarios tagged with @us
+            $us: us_placeholder1
+            # used on scenarios tagged with @br
+            $br: br_placeholder1
+            # used on scenarios tagged with one of the variants configured on
+            # behat.yml(.dist) under Ciandt\Behat\PlaceholdersExtension > variant_tags
+            # that are not specified above
+            $default: default_placeholder1
+    # replaces ${placeholder2} for any environment and variant
+    placeholder2: any_variant_placeholder2
