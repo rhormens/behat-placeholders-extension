@@ -14,3 +14,9 @@ Feature: Test if the Placeholders Extension is working correctly
   @placeholders @br @other
   Scenario: Run scenario with single variant
     When I echo "${placeholder1} and ${placeholder2}"
+
+  # this scenario should use a different placeholder value depending on the
+  # --environment/-e parameter provided on the command line
+  @placeholders
+  Scenario: Use environment dependant placeholder
+    When I echo "the environment-dependant value is: ${depends_on_env}"

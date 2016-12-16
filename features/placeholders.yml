@@ -1,6 +1,10 @@
 # used on scenarios tagged @placeholders
 default: 
   placeholders:
+    depends_on_env:
+      $default: default_value
+      $local: local_value
+      $production: production_value
     # replaces ${placeholder1}
     placeholder1:
         # used if no --environment/-e parameter was provided, or if the provided
