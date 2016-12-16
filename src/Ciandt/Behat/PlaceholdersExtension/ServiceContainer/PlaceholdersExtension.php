@@ -62,7 +62,7 @@ final class PlaceholdersExtension implements Extension
             ->info('Variant tags to iterate through')
             ->prototype('scalar')->end()
             ->end()
-            ->arrayNode('config_files')
+            ->arrayNode('config_tags')
             ->useAttributeAsKey('tag')
             ->prototype('scalar')->end()
             ->end()
@@ -79,7 +79,7 @@ final class PlaceholdersExtension implements Extension
     public function load(ContainerBuilder $container, array $config)
     {
         $this->loadScenarioForkingFeatureTester($container, $config['variant_tags']);
-        $this->loadConfigsRepository($container, $config['config_files']);
+        $this->loadConfigsRepository($container, $config['config_tags']);
         $this->loadStepTester($container, $config['variant_tags'], 'default');
         $this->loadPlaceholdersController($container);
     }

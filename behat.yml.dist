@@ -5,5 +5,5 @@ default:
                 - br
                 - us
                 - ca
-            config_files:
+            config_tags:
                 placeholders: %paths.base%/features/placeholders.yml
