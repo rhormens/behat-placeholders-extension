@@ -65,17 +65,13 @@ class PlaceholdersReplacer implements StepTester
         $this->variantTags = $variantTags;
     }
 
-    public function setEnvironment($environment)
-    {
-        $this->environment = $environment;
-    }
-
     /**
      * {@inheritdoc}
      * @todo use the tag to get correct section, not always the default one
      */
     public function setUp(Environment $env, FeatureNode $feature, StepNode $step, $skip)
     {
+        $this->environment = $this->configsRepo->getEnvironment();
         if ($this->configsRepo->hasTag($step->configTag)) {
             $this->configSection = 'default';
             $this->placeholders = $this->configsRepo->getConfigSection($step->configTag, $this->configSection)['placeholders'];
@@ -148,7 +144,7 @@ class PlaceholdersReplacer implements StepTester
         } elseif (key_exists('$default', $values)) {
             return $this->recursivePlaceholderSearch($keys, $values['$default'], $treePosition . '>$default');
         } else {
-            throw new \Exception("no placeholder is defined on $treePosition>[$key or \$default]");
+          throw new \Exception("no placeholder is defined on $treePosition>$key");
         }
     }
 
