@@ -1,3 +1,4 @@
+@placeholders:test
 Feature: Test if the Placeholders Extension is working correctly
 
   # This scenario should run three times, one for each of the tags @br, @us and @ca
@@ -20,3 +21,9 @@ Feature: Test if the Placeholders Extension is working correctly
   @placeholders
   Scenario: Use environment dependant placeholder
     When I echo "the environment-dependant value is: ${depends_on_env}"
+  
+  # this scenario should use the placeholder from the "alternative" section
+  # defined on features/placeholders.yml:alternative>placeholders>alternative_placeholder
+  @placeholders:alternative
+  Scenario: Use another placeholders file section
+    When I echo "${alternative_placeholder}"

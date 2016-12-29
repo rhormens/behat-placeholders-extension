@@ -10,6 +10,7 @@ use Behat\Testwork\Environment\Environment;
 use Behat\Testwork\Tester\Setup\SuccessfulSetup;
 use Behat\Testwork\Tester\Setup\SuccessfulTeardown;
 use Behat\Behat\Tester\ServiceContainer\TesterExtension;
+use Ciandt\Behat\PlaceholdersExtension\Utils\PlaceholderUtils;
 
 /**
  * Tester executing step tests in the runtime.
@@ -72,10 +73,13 @@ class PlaceholdersReplacer implements StepTester
     public function setUp(Environment $env, FeatureNode $feature, StepNode $step, $skip)
     {
         $this->environment = $this->placeholdersRepository->getEnvironment();
+        fwrite(STDOUT, $step->configTag);
         if ($this->placeholdersRepository->hasTag($step->configTag)) {
-            $this->configSection = 'default';
+            $this->configSection = PlaceholderUtils::getConfigSection($step->configTag);
+            fwrite(STDOUT, $this->configSection);
+            fwrite(STDOUT, 'TEST');
             $this->placeholders = $this->placeholdersRepository->
-                getConfigSection($step->configTag, $this->configSection)['placeholders'];
+                getConfigSection($step->configTag)['placeholders'];
             $this->configPath = $this->placeholdersRepository->getFilePath($step->configTag);
             if ($step->variant) {
                 $this->variant = $step->variant;

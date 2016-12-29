@@ -20,3 +20,6 @@ default:
             $default: default_placeholder1
     # replaces ${placeholder2} for any environment and variant
     placeholder2: any_variant_placeholder2
+alternative:
+  placeholders:
+      alternative_placeholder: this is on the alternative section

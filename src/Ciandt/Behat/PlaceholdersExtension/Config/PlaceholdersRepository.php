@@ -2,6 +2,7 @@
 namespace Ciandt\Behat\PlaceholdersExtension\Config;
 
 use Symfony\Component\Yaml\Yaml;
+use Ciandt\Behat\PlaceholdersExtension\Utils\PlaceholderUtils;
 
 /**
  * Description of ConfigsRepository
@@ -49,10 +50,11 @@ class PlaceholdersRepository
         $this->configs = $placeholder_maps;
     }
 
-    public function getConfigSection($tag, $section)
+    public function getConfigSection($tag)
     {
-        if ($this->hasTag($tag)) {
-            return $this->configs[$tag]['config'][$section];
+        $configTag = PlaceholderUtils::getConfigTag($tag);
+        if ($this->hasTag($configTag)) {
+            return $this->configs[$configTag]['config'][PlaceholderUtils::getConfigSection($tag)];
         }
         return null;
     }
@@ -67,7 +69,7 @@ class PlaceholdersRepository
 
     public function hasTag($tag)
     {
-        if (key_exists($tag, $this->configs)) {
+        if (key_exists(PlaceholderUtils::getConfigTag($tag), $this->configs)) {
             return true;
         } else {
             return false;

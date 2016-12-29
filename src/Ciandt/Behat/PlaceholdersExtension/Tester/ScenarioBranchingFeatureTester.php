@@ -1,6 +1,4 @@
 <?php
-
-
 namespace Ciandt\Behat\PlaceholdersExtension\Tester;
 
 use Behat\Behat\Tester\OutlineTester;
@@ -19,6 +17,7 @@ use Behat\Gherkin\Node\FeatureNode;
 use Behat\Gherkin\Node\ScenarioNode;
 use Behat\Gherkin\Node\StepNode;
 use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
+use Ciandt\Behat\PlaceholdersExtension\Utils\PlaceholderUtils;
 
 /**
  * Tester executing feature tests in the runtime.
@@ -27,26 +26,26 @@ use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
 final class ScenarioBranchingFeatureTester implements SpecificationTester
 {
 
-  /**
-   * @var SpecificationTester
-   */
+    /**
+     * @var SpecificationTester
+     */
     private $baseTester;
 
-  /**
-   * @var array
-   */
+    /**
+     * @var array
+     */
     private $variantTags;
 
-  /**
-   * @var array
-   */
+    /**
+     * @var array
+     */
     private $configsRepo;
 
-  /**
-   * Initializes tester.
-   *
-   * @param SpecificationTester $baseTester
-   */
+    /**
+     * Initializes tester.
+     *
+     * @param SpecificationTester $baseTester
+     */
     public function __construct(SpecificationTester $baseTester, $variantTags, PlaceholdersRepository $configsRepo)
     {
         $this->baseTester = $baseTester;
@@ -54,49 +53,35 @@ final class ScenarioBranchingFeatureTester implements SpecificationTester
         $this->configsRepo = $configsRepo;
     }
 
-  /**
-   * {@inheritdoc}
-   */
+    /**
+     * {@inheritdoc}
+     */
     public function setUp(Environment $env, $spec, $skip)
     {
         return new SuccessfulSetup();
     }
 
-  /**
-   * {@inheritdoc}
-   */
+    /**
+     * {@inheritdoc}
+     */
     public function test(Environment $env, $feature, $skip = false)
     {
         $results = array();
         $tester = $this->baseTester;
         $variantTags = $this->variantTags;
         if ($variantTags) {
-            return $tester->test($env, $this->reconstructFeature($feature), $skip);
+            return $tester->test($env, $this->preprocessFeature($feature), $skip);
         } else {
             return $tester->test($env, $feature, $skip);
         }
     }
 
-    private function reconstructFeature(FeatureNode $feature)
+    private function preprocessFeature(FeatureNode $feature)
     {
         $scenarios = array();
+        
         foreach ($feature->getScenarios() as $scenario) {
-            $configTag = $this->getScenarioConfigTag($scenario);
-            $scenarioVariants = array_intersect($scenario->getTags(), $this->variantTags);
-            if (count($scenarioVariants) == 1) {
-                $injectedScenario = new ScenarioNode(
-                    $scenario->getTitle(),
-                    $scenario->getTags(),
-                    $this->injectParametersOnSteps($scenario->getSteps(), end($scenarioVariants), $configTag),
-                    $scenario->getKeyword(),
-                    $scenario->getLine()
-                );
-                $scenarios[] = $injectedScenario;
-            } elseif (count($scenarioVariants) > 1) {
-                $scenarios = array_merge($scenarios, $this->forkScenario($scenario, $scenarioVariants, $configTag));
-            } else {
-                $scenarios[] = $scenario;
-            }
+            $scenarios = array_merge($scenarios,$this->preprocessScenario($scenario,$feature));
         }
 
         return new FeatureNode(
@@ -111,44 +96,56 @@ final class ScenarioBranchingFeatureTester implements SpecificationTester
             $feature->getLine()
         );
     }
-  
-    private function getScenarioConfigTag(ScenarioNode $scenario)
+    
+    private function preprocessScenario(ScenarioNode $scenario, FeatureNode $feature){
+        $configTag = $this->getPlaceholdersConfigTag($scenario);
+        $currentTags = array_merge($scenario->getTags(), $feature->getTags());
+        $scenarioVariantTags = PlaceholderUtils::filterVariantTags($scenario->getTags(),false);
+        
+            if (count($scenarioVariants) <= 1) {
+                $injectedScenario = new ScenarioNode(
+                    $scenario->getTitle(), $scenario->getTags(), $this->injectParametersOnSteps($scenario->getSteps(), end($scenarioVariants), $configTag), $scenario->getKeyword(), $scenario->getLine()
+                );
+                $scenarios[] = $injectedScenario;
+            } elseif (count($scenarioVariants) > 1) {
+                $scenarios = array_merge($scenarios, $this->forkScenario($scenario, $scenarioVariants, $configTag));
+            } else {
+                $scenarios[] = $scenario;
+            }
+    }
+
+    private function getPlaceholdersConfigTag(ScenarioNode $scenario)
     {
         $availableTags = $this->configsRepo->getTags();
-        $configTags = array_intersect($scenario->getTags(), $availableTags);
-    
+        $configTags = array_filter($scenario->getTags(), function($tag) use ($availableTags) {
+            if (in_array(PlaceholderUtils::getConfigTag($tag), $availableTags)){
+                return true;
+            }
+            else return false;
+        }
+            );
+
         if (count($configTags) > 1) {
             throw new \Exception("Scenario {$scenario->getTitle()}"
-            . " should have only ONE of the following Placeholder"
-            . " File Tags: " . implode(',', $availableTags));
+            . " should have only ONE config tag. Multiple found: " . implode(',', $configTags));
         }
-    
+
         if (count($configTags) == 1) {
             return end($configTags);
         }
-    
-        return false;
-  
-    }
 
+        return false;
+    }
 
     private function forkScenario(ScenarioNode $scenario, $variants, $configTag)
     {
         $scenarios = array();
-        $nonVariantTags = array_filter($scenario->getTags(), function ($val) {
-            if (!in_array($val, $this->variantTags)) {
-                return true;
-            }
-        });
+        $nonVariantTags = PlaceholderUtils::filterVariantTags($scenario->getTags(),true);
         foreach ($variants as $variant) {
             $tags = array_merge($nonVariantTags, array($variant));
             $steps = $this->injectParametersOnSteps($scenario->getSteps(), $variant, $configTag);
             $variantScenario = new ScenarioNode(
-                $scenario->getTitle(),
-                $tags,
-                $steps,
-                $scenario->getKeyword(),
-                $scenario->getLine()
+                $scenario->getTitle(), $tags, $steps, $scenario->getKeyword(), $scenario->getLine()
             );
             $scenarios[] = $variantScenario;
         }
@@ -169,9 +166,9 @@ final class ScenarioBranchingFeatureTester implements SpecificationTester
         return $injectedSteps;
     }
 
-  /**
-   * {@inheritdoc}
-   */
+    /**
+     * {@inheritdoc}
+     */
     public function tearDown(Environment $env, $spec, $skip, TestResult $result)
     {
         return new SuccessfulTeardown();

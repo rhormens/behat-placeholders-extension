@@ -4,6 +4,7 @@ namespace Ciandt\Behat\PlaceholdersExtension\ServiceContainer;
 use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
 use Ciandt\Behat\PlaceholdersExtension\Tester\PerVariantScenarioTester;
 use Ciandt\Behat\PlaceholdersExtension\Tester\PlaceholdersReplacer;
+use Ciandt\Behat\PlaceholdersExtension\Utils\PlaceholderUtils;
 use Behat\Testwork\Cli\ServiceContainer\CliExtension;
 use Behat\Testwork\EventDispatcher\ServiceContainer\EventDispatcherExtension;
 use Behat\Testwork\ServiceContainer\Extension;
@@ -78,9 +79,10 @@ final class PlaceholdersExtension implements Extension
      */
     public function load(ContainerBuilder $container, array $config)
     {
+        $this->initializePlaceholderUtils($config['variant_tags']);
         $this->loadScenarioForkingFeatureTester($container, $config['variant_tags']);
         $this->loadPlaceholdersRepository($container, $config['config_tags']);
-        $this->loadStepTester($container, $config['variant_tags'], 'default');
+        $this->loadStepTester($container, $config['variant_tags']);
         $this->loadPlaceholdersController($container);
     }
 
@@ -94,6 +96,11 @@ final class PlaceholdersExtension implements Extension
         $definition->addTag(CliExtension::CONTROLLER_TAG, array('priority' => 1));
         $container->setDefinition(self::PLACEHOLDERS_CONTROLLER_ID, $definition);
     }
+
+    protected function initializePlaceholderUtils($variantTags){
+    PlaceholderUtils::setVariantTags($variantTags);
+    }
+
 
     /**
      * Loads event-dispatching feature tester.
