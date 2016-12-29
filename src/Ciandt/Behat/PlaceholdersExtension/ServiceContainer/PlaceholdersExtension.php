@@ -1,7 +1,7 @@
 <?php
 namespace Ciandt\Behat\PlaceholdersExtension\ServiceContainer;
 
-use Ciandt\Behat\PlaceholdersExtension\Config\ConfigsRepository;
+use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
 use Ciandt\Behat\PlaceholdersExtension\Tester\PerVariantScenarioTester;
 use Ciandt\Behat\PlaceholdersExtension\Tester\PlaceholdersReplacer;
 use Behat\Testwork\Cli\ServiceContainer\CliExtension;
@@ -18,10 +18,10 @@ use Behat\Testwork\Environment\ServiceContainer\EnvironmentExtension;
 final class PlaceholdersExtension implements Extension
 {
 
-    const SCENARIO_TESTER_ID = 'tester.scenario';
-    const SPECIFICATION_TESTER_ID = 'tester.specification';
-    const OUTLINE_TESTER_ID = 'tester.outline';
-    const PLACEHOLDER_REPLACER_ID = 'placeholders.replacer';
+    const PLACEHOLDERS_REPLACER_ID = 'placeholders.replacer';
+    const PLACEHOLDERS_REPOSITIORY_ID = 'placeholders.repository';
+    const PLACEHOLDERS_CONTROLLER_ID = 'placeholders.controller';
+    const VARIANTS_PREPROCESSOR_ID = 'placeholders.variants_preprocessor';
 
     /**
      * Returns the extension config key.
@@ -79,7 +79,7 @@ final class PlaceholdersExtension implements Extension
     public function load(ContainerBuilder $container, array $config)
     {
         $this->loadScenarioForkingFeatureTester($container, $config['variant_tags']);
-        $this->loadConfigsRepository($container, $config['config_tags']);
+        $this->loadPlaceholdersRepository($container, $config['config_tags']);
         $this->loadStepTester($container, $config['variant_tags'], 'default');
         $this->loadPlaceholdersController($container);
     }
@@ -90,9 +90,9 @@ final class PlaceholdersExtension implements Extension
     private function loadPlaceholdersController(ContainerBuilder $container)
     {
         $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Cli\PlaceholdersController', array(
-            new Reference(self::PLACEHOLDER_REPLACER_ID)));
+            new Reference(self::PLACEHOLDERS_REPOSITIORY_ID)));
         $definition->addTag(CliExtension::CONTROLLER_TAG, array('priority' => 1));
-        $container->setDefinition(CliExtension::CONTROLLER_TAG . '.placeholders', $definition);
+        $container->setDefinition(self::PLACEHOLDERS_CONTROLLER_ID, $definition);
     }
 
     /**
@@ -100,12 +100,12 @@ final class PlaceholdersExtension implements Extension
      *
      * @param ContainerBuilder $container
      */
-    protected function loadConfigsRepository(ContainerBuilder $container, $configs_mapping)
+    protected function loadPlaceholdersRepository(ContainerBuilder $container, $configs_mapping)
     {
-        $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Config\ConfigsRepository', array(
+        $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository', array(
             $configs_mapping
         ));
-        $container->setDefinition(ConfigsRepository::CONFIGS_REPOSITORY_ID, $definition);
+        $container->setDefinition(self::PLACEHOLDERS_REPOSITIORY_ID, $definition);
     }
 
     /**
@@ -118,10 +118,10 @@ final class PlaceholdersExtension implements Extension
         $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Tester\ScenarioBranchingFeatureTester', array(
             new Reference(TesterExtension::SPECIFICATION_TESTER_ID),
             $variantTags,
-            new Reference(ConfigsRepository::CONFIGS_REPOSITORY_ID)
+            new Reference(self::PLACEHOLDERS_REPOSITIORY_ID)
         ));
         $definition->addTag(TesterExtension::SPECIFICATION_TESTER_WRAPPER_TAG, array('priority' => 1000));
-        $container->setDefinition(TesterExtension::SPECIFICATION_TESTER_WRAPPER_TAG . '.per_variant_branch', $definition);
+        $container->setDefinition(self::VARIANTS_PREPROCESSOR_ID, $definition);
     }
 
     /**
@@ -134,9 +134,9 @@ final class PlaceholdersExtension implements Extension
         $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Tester\PlaceholdersReplacer', array(
             new Reference(TesterExtension::STEP_TESTER_ID),
             $variantTags,
-            new Reference(ConfigsRepository::CONFIGS_REPOSITORY_ID)
+            new Reference(self::PLACEHOLDERS_REPOSITIORY_ID)
         ));
         $definition->addTag(TesterExtension::STEP_TESTER_WRAPPER_TAG);
-        $container->setDefinition(self::PLACEHOLDER_REPLACER_ID, $definition);
+        $container->setDefinition(self::PLACEHOLDERS_REPLACER_ID, $definition);
     }
 }

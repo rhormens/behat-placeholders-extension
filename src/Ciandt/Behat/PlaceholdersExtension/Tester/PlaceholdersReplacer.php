@@ -1,7 +1,7 @@
 <?php
 namespace Ciandt\Behat\PlaceholdersExtension\Tester;
 
-use Ciandt\Behat\PlaceholdersExtension\Config\ConfigsRepository;
+use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
 use Behat\Behat\Tester\Result\StepResult;
 use Behat\Behat\Tester\StepTester;
 use Behat\Gherkin\Node\FeatureNode;
@@ -36,12 +36,12 @@ class PlaceholdersReplacer implements StepTester
     /**
      * @var array
      */
-    private $configsRepo;
+    private $placeholdersRepository;
 
     /**
      * @var array
      */
-    private $placeholders = FALSE;
+    private $placeholders = false;
 
     /**
      * @var string
@@ -58,10 +58,10 @@ class PlaceholdersReplacer implements StepTester
      */
     private $environment;
 
-    public function __construct(StepTester $baseTester, $variantTags, ConfigsRepository $configsRepo)
+    public function __construct(StepTester $baseTester, $variantTags, PlaceholdersRepository $placeholdersRepository)
     {
         $this->baseTester = $baseTester;
-        $this->configsRepo = $configsRepo;
+        $this->placeholdersRepository = $placeholdersRepository;
         $this->variantTags = $variantTags;
     }
 
@@ -71,11 +71,12 @@ class PlaceholdersReplacer implements StepTester
      */
     public function setUp(Environment $env, FeatureNode $feature, StepNode $step, $skip)
     {
-        $this->environment = $this->configsRepo->getEnvironment();
-        if ($this->configsRepo->hasTag($step->configTag)) {
+        $this->environment = $this->placeholdersRepository->getEnvironment();
+        if ($this->placeholdersRepository->hasTag($step->configTag)) {
             $this->configSection = 'default';
-            $this->placeholders = $this->configsRepo->getConfigSection($step->configTag, $this->configSection)['placeholders'];
-            $this->configPath = $this->configsRepo->getFilePath($step->configTag);
+            $this->placeholders = $this->placeholdersRepository->
+                getConfigSection($step->configTag, $this->configSection)['placeholders'];
+            $this->configPath = $this->placeholdersRepository->getFilePath($step->configTag);
             if ($step->variant) {
                 $this->variant = $step->variant;
             }
@@ -100,11 +101,16 @@ class PlaceholdersReplacer implements StepTester
 
     private function reconstructStep(StepNode $step)
     {
-        //@todo replace placeholders on arguments (tablenode)        
+        //@todo replace placeholders on arguments (tablenode)
         $arguments = $step->getArguments();
         $text = $this->replacePlaceholders($step->getText(), $step->variant, $this->environment);
         return new StepNode(
-            $step->getKeyword(), $text, $arguments, $step->getLine(), $step->getKeywordType());
+            $step->getKeyword(),
+            $text,
+            $arguments,
+            $step->getLine(),
+            $step->getKeywordType()
+        );
     }
 
     private function replacePlaceholders($string, $var, $env)
@@ -144,7 +150,7 @@ class PlaceholdersReplacer implements StepTester
         } elseif (key_exists('$default', $values)) {
             return $this->recursivePlaceholderSearch($keys, $values['$default'], $treePosition . '>$default');
         } else {
-          throw new \Exception("no placeholder is defined on $treePosition>$key");
+            throw new \Exception("no placeholder is defined on $treePosition>$key");
         }
     }
 

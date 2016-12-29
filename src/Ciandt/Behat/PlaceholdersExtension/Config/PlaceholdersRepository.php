@@ -8,10 +8,8 @@ use Symfony\Component\Yaml\Yaml;
  *
  * @author bwowk
  */
-class ConfigsRepository
+class PlaceholdersRepository
 {
-
-    const CONFIGS_REPOSITORY_ID = 'placeholder_configs_repo';
 
     private $configs;
 
@@ -27,7 +25,7 @@ class ConfigsRepository
     }
 
     /**
-     * 
+     *
      * @return string[]
      * @todo read configs and also bring alternative @config:section tags
      */
@@ -37,7 +35,7 @@ class ConfigsRepository
     }
 
     /**
-     * 
+     *
      * @param type $config_files
      * @todo user %paths.base% value
      */
@@ -53,34 +51,36 @@ class ConfigsRepository
 
     public function getConfigSection($tag, $section)
     {
-        if ($this->hasTag($tag))
+        if ($this->hasTag($tag)) {
             return $this->configs[$tag]['config'][$section];
-        return NULL;
+        }
+        return null;
     }
 
     public function getFilePath($tag)
     {
-        if ($this->hasTag($tag))
+        if ($this->hasTag($tag)) {
             return $this->configs[$tag]['path'];
-        return NULL;
+        }
+        return null;
     }
 
     public function hasTag($tag)
     {
-        if (key_exists($tag, $this->configs))
+        if (key_exists($tag, $this->configs)) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
     
-    function getEnvironment()
+    public function getEnvironment()
     {
         return $this->environment;
     }
 
-    function setEnvironment($environment)
+    public function setEnvironment($environment)
     {
         $this->environment = $environment;
     }
-
 }
