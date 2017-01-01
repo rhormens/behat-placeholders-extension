@@ -108,7 +108,6 @@ final class PlaceholdersExtension implements Extension
 
 
     /**
-     * Loads event-dispatching feature tester.
      *
      * @param ContainerBuilder $container
      */
@@ -121,7 +120,6 @@ final class PlaceholdersExtension implements Extension
     }
 
     /**
-     * Loads event-dispatching feature tester.
      *
      * @param ContainerBuilder $container
      */

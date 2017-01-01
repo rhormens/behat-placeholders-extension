@@ -1,13 +1,5 @@
 <?php
 
-/*
- * This file is part of the Behat.
- * (c) Konstantin Kudryashov <ever.zet@gmail.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace Ciandt\Behat\PlaceholdersExtension\Transformer;
 
 use Behat\Behat\Transformation\Transformer\ArgumentTransformer;
@@ -18,8 +10,7 @@ use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
 
 /**
  * Transforms a single argument value.
- *
- * @author Konstantin Kudryashov <ever.zet@gmail.com>
+
  */
 class PlaceholdersTransformer implements ArgumentTransformer
 {
