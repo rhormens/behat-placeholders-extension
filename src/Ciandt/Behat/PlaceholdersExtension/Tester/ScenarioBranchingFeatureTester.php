@@ -46,10 +46,9 @@ final class ScenarioBranchingFeatureTester implements SpecificationTester
      *
      * @param SpecificationTester $baseTester
      */
-    public function __construct(SpecificationTester $baseTester, $variantTags, PlaceholdersRepository $configsRepo)
+    public function __construct(SpecificationTester $baseTester, PlaceholdersRepository $configsRepo)
     {
         $this->baseTester = $baseTester;
-        $this->variantTags = $variantTags;
         $this->configsRepo = $configsRepo;
     }
 
@@ -66,14 +65,9 @@ final class ScenarioBranchingFeatureTester implements SpecificationTester
      */
     public function test(Environment $env, $feature, $skip = false)
     {
-        $results = array();
         $tester = $this->baseTester;
-        $variantTags = $this->variantTags;
-        if ($variantTags) {
-            return $tester->test($env, $this->preprocessFeature($feature), $skip);
-        } else {
-            return $tester->test($env, $feature, $skip);
-        }
+        $reconstructedFeature = $this->preprocessFeature($feature);
+        return $tester->test($env, $reconstructedFeature, $skip);
     }
 
     private function preprocessFeature(FeatureNode $feature)
@@ -81,7 +75,7 @@ final class ScenarioBranchingFeatureTester implements SpecificationTester
         $scenarios = array();
         
         foreach ($feature->getScenarios() as $scenario) {
-            $scenarios = array_merge($scenarios,$this->preprocessScenario($scenario,$feature));
+            $scenarios = array_merge($scenarios,$this->splitScenarioPerVariants($scenario,$feature));
         }
 
         return new FeatureNode(
@@ -97,73 +91,36 @@ final class ScenarioBranchingFeatureTester implements SpecificationTester
         );
     }
     
-    private function preprocessScenario(ScenarioNode $scenario, FeatureNode $feature){
-        $configTag = $this->getPlaceholdersConfigTag($scenario);
-        $currentTags = array_merge($scenario->getTags(), $feature->getTags());
-        $scenarioVariantTags = PlaceholderUtils::filterVariantTags($scenario->getTags(),false);
+    private function splitScenarioPerVariants(ScenarioNode $scenario, FeatureNode $feature){
+        $scenarioTags = $scenario->getTags();
+        $featureTags = $feature->getTags();
+        $tags = array_merge($scenarioTags,$featureTags);
         
-            if (count($scenarioVariants) <= 1) {
-                $injectedScenario = new ScenarioNode(
-                    $scenario->getTitle(), $scenario->getTags(), $this->injectParametersOnSteps($scenario->getSteps(), end($scenarioVariants), $configTag), $scenario->getKeyword(), $scenario->getLine()
-                );
-                $scenarios[] = $injectedScenario;
-            } elseif (count($scenarioVariants) > 1) {
-                $scenarios = array_merge($scenarios, $this->forkScenario($scenario, $scenarioVariants, $configTag));
+        $variants = PlaceholderUtils::filterVariantTags($tags,false);
+        
+            if (count($variants) <= 1) {
+                return array($scenario);
             } else {
-                $scenarios[] = $scenario;
+                return $this->forkScenario($scenario, $variants);
             }
+        
     }
-
-    private function getPlaceholdersConfigTag(ScenarioNode $scenario)
-    {
-        $availableTags = $this->configsRepo->getTags();
-        $configTags = array_filter($scenario->getTags(), function($tag) use ($availableTags) {
-            if (in_array(PlaceholderUtils::getConfigTag($tag), $availableTags)){
-                return true;
-            }
-            else return false;
-        }
-            );
-
-        if (count($configTags) > 1) {
-            throw new \Exception("Scenario {$scenario->getTitle()}"
-            . " should have only ONE config tag. Multiple found: " . implode(',', $configTags));
-        }
-
-        if (count($configTags) == 1) {
-            return end($configTags);
-        }
-
-        return false;
-    }
-
-    private function forkScenario(ScenarioNode $scenario, $variants, $configTag)
+    
+    private function forkScenario(ScenarioNode $scenario, $variants)
     {
         $scenarios = array();
         $nonVariantTags = PlaceholderUtils::filterVariantTags($scenario->getTags(),true);
         foreach ($variants as $variant) {
             $tags = array_merge($nonVariantTags, array($variant));
-            $steps = $this->injectParametersOnSteps($scenario->getSteps(), $variant, $configTag);
-            $variantScenario = new ScenarioNode(
-                $scenario->getTitle(), $tags, $steps, $scenario->getKeyword(), $scenario->getLine()
+            $scenarios[] = new ScenarioNode(
+                $scenario->getTitle(),
+                $tags,
+                $scenario->getSteps(),
+                $scenario->getKeyword(),
+                $scenario->getLine()
             );
-            $scenarios[] = $variantScenario;
         }
         return $scenarios;
-    }
-
-    private function injectParametersOnSteps($steps, $variant, $configTag)
-    {
-        $injectedSteps = array();
-        foreach ($steps as $step) {
-            $newStep = clone $step;
-            $newStep->variant = $variant;
-            if ($configTag) {
-                $newStep->configTag = $configTag;
-            }
-            $injectedSteps[] = $newStep;
-        }
-        return $injectedSteps;
     }
 
     /**

@@ -1,11 +1,8 @@
 <?php
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 
 namespace Ciandt\Behat\PlaceholdersExtension\Utils;
+
+use Ciandt\Behat\PlaceholdersExtension\Exception\RedundantConfigTagException;
 
 /**
  * Filters an array of tags, excluding or including only the variant tags
@@ -15,14 +12,21 @@ namespace Ciandt\Behat\PlaceholdersExtension\Utils;
 class PlaceholderUtils
 {
     private static $variantTags;
+    
+    private static $configKeys;
 
     public static function setVariantTags($variantTags)
     {
         self::$variantTags = $variantTags;
     }
     
-    public static  function getConfigSection($tag){
-        $tagParts = explode(':', tag);
+    public static function setConfigKeys($configKeys)
+    {
+        self::$configKeys = $configKeys;
+    }
+    
+    public static  function getSectionKey($tag){
+        $tagParts = explode(':', $tag);
         if (count($tagParts) == 2){
             return $tagParts[1];
         } else {
@@ -31,15 +35,47 @@ class PlaceholderUtils
         
     }
     
-    public static  function getConfigTag($tag){
-        return explode(':', $tag)[0];
+    public static function getConfigTag($tags){
+        $configTags = self::filterConfigTags($tags,false);
+        if (empty($configTags)) {
+            return false;
+        }
+        if (count($configTags) > 1) {
+            throw new RedundantConfigTagException($configTags);
+        }
+        return $configTags[0];
     }
 
+
+    public static function getConfigKey($tag){
+        return explode(':', $tag)[0];
+    }
+    
     
     public static function filterVariantTags($tags, $exclude)
-    {
+    {   
         return array_filter($tags, function ($tag) use ($exclude) {
-            return (in_array(self::getConfigTag($tag), self::$variantTags) xor $exclude);
+            return (in_array($tag, self::$variantTags) xor $exclude);
+        });
+    }
+    
+    public static function getVariant($tags){
+        $variantTags = self::filterVariantTags($tags, false);
+        if (count($variantTags) > 1) {
+            throw new \RuntimeException("Scenario should only have one variant tag."
+                    . " Multiple found: " . implode(', ', $variantTags));
+        }
+        if (empty($variantTags)){
+            return 'default';
+        }
+        return end($variantTags);
+    }
+
+
+    public static function filterConfigTags($tags, $exclude)
+    {
+        return array_filter($tags, function ($tag) use ($exclude){
+            return (in_array(self::getConfigKey($tag), self::$configKeys) xor $exclude);
         });
     }
 }
