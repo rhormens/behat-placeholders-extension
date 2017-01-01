@@ -65,6 +65,7 @@ Feature: Variant Branching
           1 step (1 passed)
           """
 
+  
     Scenario: Multi variant scenario branching
         Given a file named "features/multiple_flavors.feature" with:
           """
@@ -74,49 +75,50 @@ Feature: Variant Branching
               Given the ice cream truck has "${flavor}" ice cream
           """
 
-        When I run "behat features/multi_variant.feature"
+        When I run "behat features/multiple_flavors.feature"
         Then it should pass with:
           """
             @ice_cream @vanilla
-            Scenario: Echo placeholder value # features/multi_variant.feature:3
-              Given I echo "${flavor}"       # FeatureContext::echoString()
-                │ vanilla
-
+            Scenario: Offer several ice cream flavors             # features/multiple_flavors.feature:3
+              Given the ice cream truck has "${flavor}" ice cream # FeatureContext::echoFlavor()
+                │ It sells vanilla ice cream
+          
             @ice_cream @chocolate
-            Scenario: Echo placeholder value # features/multi_variant.feature:3
-              Given I echo "${flavor}"       # FeatureContext::echoString()
-                │ chocolate
-
+            Scenario: Offer several ice cream flavors             # features/multiple_flavors.feature:3
+              Given the ice cream truck has "${flavor}" ice cream # FeatureContext::echoFlavor()
+                │ It sells chocolate ice cream
+          
             @ice_cream @pistachio
-            Scenario: Echo placeholder value # features/multi_variant.feature:3
-              Given I echo "${flavor}"       # FeatureContext::echoString()
-                │ pistachio
-
+            Scenario: Offer several ice cream flavors             # features/multiple_flavors.feature:3
+              Given the ice cream truck has "${flavor}" ice cream # FeatureContext::echoFlavor()
+                │ It sells pistachio ice cream
+          
           3 scenarios (3 passed)
-
+          3 steps (3 passed)
          """
-    Scenario: Multi variant scenario branching with non-variant tags
-        Given a file named "features/multi_variant.feature" with:
+
+    Scenario: Multi variant branching preserving non-variant tags
+        Given a file named "features/multiple_flavors.feature" with:
           """
-          Feature: Multi Variant
+          Feature: Multiple flavors
             @ice_cream @vanilla @chocolate @other
-            Scenario: Echo placeholder value
-              Given I echo "${flavor}"
+            Scenario: Offer several ice cream flavors
+              Given the ice cream truck has "${flavor}" ice cream
           """
 
-        When I run "behat features/multi_variant.feature"
+        When I run "behat features/multiple_flavors.feature"
         Then it should pass with:
           """
             @ice_cream @other @vanilla
-            Scenario: Echo placeholder value # features/multi_variant.feature:3
-              Given I echo "${flavor}"       # FeatureContext::echoString()
-                │ vanilla
-
+            Scenario: Offer several ice cream flavors             # features/multiple_flavors.feature:3
+              Given the ice cream truck has "${flavor}" ice cream # FeatureContext::echoFlavor()
+                │ It sells vanilla ice cream
+          
             @ice_cream @other @chocolate
-            Scenario: Echo placeholder value # features/multi_variant.feature:3
-              Given I echo "${flavor}"       # FeatureContext::echoString()
-                │ chocolate
-
+            Scenario: Offer several ice cream flavors             # features/multiple_flavors.feature:3
+              Given the ice cream truck has "${flavor}" ice cream # FeatureContext::echoFlavor()
+                │ It sells chocolate ice cream
+          
           2 scenarios (2 passed)
-
-         """
+          2 steps (2 passed)
+          """
