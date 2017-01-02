@@ -90,14 +90,25 @@ class StepDecoratingScenarioTester implements ScenarioTester{
             $decoratedSteps[] = new PlaceholderContainerStepNode(
                     $step,
                     $this->configKey,
-                    $this->configSection,
+                    $this->sectionKey,
                     $this->variant);
         }
-        return new BackgroundNode(
+        $decoratedBackground = new BackgroundNode(
                 $undecoratedBackground->getTitle(),
                 $decoratedSteps,
                 $undecoratedBackground->getKeyword(),
                 $undecoratedBackground->getLine());
+        
+        return new FeatureNode(
+            $feature->getTitle(),
+            $feature->getDescription(),
+            $feature->getTags(),
+            $decoratedBackground,
+            $feature->getScenarios(),
+            $feature->getKeyword(),
+            $feature->getLanguage(),
+            $feature->getFile(),
+            $feature->getLine());
     }
 
 }

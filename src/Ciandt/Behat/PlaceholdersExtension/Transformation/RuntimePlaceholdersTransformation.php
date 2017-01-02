@@ -36,7 +36,7 @@ final class RuntimePlaceholdersTransformation extends RuntimeCallee implements P
     }
 
     private static function replaceTablePlaceholders(TableNode $table, PlaceholdersRepository $repository, PlaceholderContainerStepNode $container) {
-        
+        //@todo
     }
 
     public static function supportsDefinitionAndArgument(DefinitionCall $definitionCall, $argumentValue) {
@@ -45,7 +45,7 @@ final class RuntimePlaceholdersTransformation extends RuntimeCallee implements P
                 return true;
             }
             if ($argumentValue instanceof TableNode && $this->tableHasPlaceholders($table)) {
-                return true;
+                return false;
             }
         }
         return false;
