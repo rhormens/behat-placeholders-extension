@@ -1,9 +1,0 @@
-default:
-    extensions:
-        Ciandt\Behat\PlaceholdersExtension:
-            variant_tags:
-                - br
-                - us
-                - ca
-            config_tags:
-                placeholders: %paths.base%/features/placeholders.yml
