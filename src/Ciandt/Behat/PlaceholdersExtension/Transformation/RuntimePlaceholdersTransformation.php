@@ -44,7 +44,7 @@ final class RuntimePlaceholdersTransformation extends RuntimeCallee implements P
             if (is_string($argumentValue) && preg_match(self::USER_DEFINED_PLACEHOLDER_REGEX, $argumentValue) === 1) {
                 return true;
             }
-            if ($argumentValue instanceof TableNode && self::tableHasPlaceholders($table)) {
+            if ($argumentValue instanceof TableNode) {
                 return false;
             }
         }
