@@ -14,7 +14,7 @@ branches:
 
 before_script:
   - composer install
-  - export PATH=./bin:$PATH
+  - export PATH=./vendor/bin:$PATH
 
 script:
   - behat --format=progress --strict
