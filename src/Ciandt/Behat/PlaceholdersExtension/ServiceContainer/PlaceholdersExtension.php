@@ -1,21 +1,17 @@
 <?php
 namespace Ciandt\Behat\PlaceholdersExtension\ServiceContainer;
 
-use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
-use Ciandt\Behat\PlaceholdersExtension\Tester\PerVariantScenarioTester;
-use Ciandt\Behat\PlaceholdersExtension\Tester\PlaceholderReplacingStepTester;
-use Ciandt\Behat\PlaceholdersExtension\Utils\PlaceholderUtils;
+use Behat\Behat\Tester\ServiceContainer\TesterExtension;
+use Behat\Behat\Transformation\ServiceContainer\TransformationExtension;
 use Behat\Testwork\Cli\ServiceContainer\CliExtension;
 use Behat\Testwork\EventDispatcher\ServiceContainer\EventDispatcherExtension;
 use Behat\Testwork\ServiceContainer\Extension;
 use Behat\Testwork\ServiceContainer\ExtensionManager;
+use Ciandt\Behat\PlaceholdersExtension\Utils\PlaceholderUtils;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
-use Behat\Behat\Tester\ServiceContainer\TesterExtension;
-use Behat\Testwork\Environment\ServiceContainer\EnvironmentExtension;
-use Behat\Behat\Transformation\ServiceContainer\TransformationExtension;
 
 final class PlaceholdersExtension implements Extension
 {
@@ -26,6 +22,7 @@ final class PlaceholdersExtension implements Extension
     const PLACEHOLDERS_TRANSFORMER_ID = 'placeholders.transformer';
     const VARIANTS_PREPROCESSOR_ID = 'placeholders.variants_preprocessor';
     const STEPS_DECORATOR_ID = 'placeholders.steps_decorator';
+    const BEFORE_SCENARIO_SUBSCRIBER_ID = 'placeholders.before_scenario';
 
     /**
      * Returns the extension config key.
@@ -84,9 +81,9 @@ final class PlaceholdersExtension implements Extension
     {
         $this->initializePlaceholderUtils($config['variant_tags'], $config['config_tags']);
         $this->loadScenarioBranchingFeatureTester($container, $config['variant_tags']);
-        $this->loadStepDecoratingScenarioTester($container);
         $this->loadPlaceholdersRepository($container, $config['config_tags']);
         $this->loadPlaceholdersController($container);
+        $this->loadBeforeScenarioSubscriber($container);
         $this->loadPlaceholdersTransformer($container);
     }
 
@@ -142,7 +139,8 @@ final class PlaceholdersExtension implements Extension
     protected function loadPlaceholdersTransformer(ContainerBuilder $container)
     {
         $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Transformer\PlaceholdersTransformer', array(
-            new Reference(self::PLACEHOLDERS_REPOSITIORY_ID)
+            new Reference(self::PLACEHOLDERS_REPOSITIORY_ID),
+            new Reference(self::BEFORE_SCENARIO_SUBSCRIBER_ID)
         ));
         $definition->addTag(TransformationExtension::ARGUMENT_TRANSFORMER_TAG, array('priority' => 9999999));
         $container->setDefinition(self::PLACEHOLDERS_TRANSFORMER_ID, $definition);
@@ -156,5 +154,11 @@ final class PlaceholdersExtension implements Extension
         ));
         $definition->addTag(TesterExtension::SCENARIO_TESTER_WRAPPER_TAG, array('priority' => 9999999));
         $container->setDefinition(self::STEPS_DECORATOR_ID, $definition);
+    }
+    
+    protected function loadBeforeScenarioSubscriber(ContainerBuilder $container){
+        $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Subscriber\BeforeScenarioSubscriber');
+        $definition->addTag(EventDispatcherExtension::SUBSCRIBER_TAG, array('priority' => 0));
+        $container->setDefinition(self::BEFORE_SCENARIO_SUBSCRIBER_ID, $definition);
     }
 }

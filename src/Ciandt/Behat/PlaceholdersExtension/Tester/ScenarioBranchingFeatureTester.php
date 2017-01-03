@@ -1,21 +1,15 @@
 <?php
 namespace Ciandt\Behat\PlaceholdersExtension\Tester;
 
-use Behat\Behat\Tester\OutlineTester;
-use Behat\Behat\Tester\ScenarioTester;
+use Behat\Gherkin\Node\FeatureNode;
 use Behat\Gherkin\Node\OutlineNode;
+use Behat\Gherkin\Node\ScenarioInterface;
+use Behat\Gherkin\Node\ScenarioNode;
 use Behat\Testwork\Environment\Environment;
-use Behat\Testwork\Environment\EnvironmentManager;
-use Behat\Testwork\Tester\Result\IntegerTestResult;
 use Behat\Testwork\Tester\Result\TestResult;
-use Behat\Testwork\Tester\Result\TestResults;
-use Behat\Testwork\Tester\Result\TestWithSetupResult;
 use Behat\Testwork\Tester\Setup\SuccessfulSetup;
 use Behat\Testwork\Tester\Setup\SuccessfulTeardown;
 use Behat\Testwork\Tester\SpecificationTester;
-use Behat\Gherkin\Node\FeatureNode;
-use Behat\Gherkin\Node\ScenarioNode;
-use Behat\Gherkin\Node\StepNode;
 use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
 use Ciandt\Behat\PlaceholdersExtension\Utils\PlaceholderUtils;
 
@@ -91,34 +85,45 @@ final class ScenarioBranchingFeatureTester implements SpecificationTester
         );
     }
     
-    private function splitScenarioPerVariants(ScenarioNode $scenario, FeatureNode $feature){
-        $scenarioTags = $scenario->getTags();
+    private function splitScenarioPerVariants(ScenarioInterface $scenarioLike, FeatureNode $feature){
+        $scenarioTags = $scenarioLike->getTags();
         $featureTags = $feature->getTags();
         $tags = array_merge($scenarioTags,$featureTags);
         
         $variants = PlaceholderUtils::filterVariantTags($tags,false);
         
             if (count($variants) <= 1) {
-                return array($scenario);
+                return array($scenarioLike);
             } else {
-                return $this->forkScenario($scenario, $variants);
+                return $this->forkScenario($scenarioLike, $variants);
             }
         
     }
     
-    private function forkScenario(ScenarioNode $scenario, $variants)
+    private function forkScenario(ScenarioInterface $scenarioLike, $variants)
     {
         $scenarios = array();
-        $nonVariantTags = PlaceholderUtils::filterVariantTags($scenario->getTags(),true);
+        $nonVariantTags = PlaceholderUtils::filterVariantTags($scenarioLike->getTags(),true);
         foreach ($variants as $variant) {
             $tags = array_merge($nonVariantTags, array($variant));
+            if ($scenarioLike instanceof ScenarioNode){
             $scenarios[] = new ScenarioNode(
-                $scenario->getTitle(),
+                $scenarioLike->getTitle(),
                 $tags,
-                $scenario->getSteps(),
-                $scenario->getKeyword(),
-                $scenario->getLine()
+                $scenarioLike->getSteps(),
+                $scenarioLike->getKeyword(),
+                $scenarioLike->getLine()
             );
+            } elseif ($scenarioLike instanceof OutlineNode){
+            $scenarios[] = new OutlineNode(
+                $scenarioLike->getTitle(),
+                $tags,
+                $scenarioLike->getSteps(),
+                $scenarioLike->getExampleTable(),
+                $scenarioLike->getKeyword(),
+                $scenarioLike->getLine()
+            );    
+            }
         }
         return $scenarios;
     }

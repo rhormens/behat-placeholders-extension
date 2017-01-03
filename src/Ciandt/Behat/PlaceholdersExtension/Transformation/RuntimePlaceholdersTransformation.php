@@ -25,11 +25,11 @@ final class RuntimePlaceholdersTransformation extends RuntimeCallee implements P
         return self::USER_DEFINED_PLACEHOLDER_REGEX;
     }
 
-    private static function replaceStringPlaceholders($string, PlaceholdersRepository $repository, PlaceholderContainerStepNode $container) {
+    private static function replaceStringPlaceholders($string, PlaceholdersRepository $repository, $tags) {
         preg_match_all(self::USER_DEFINED_PLACEHOLDER_REGEX, $string, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
             $placeholder = $match['placeholder'];
-            $replacement = $repository->getReplacement($placeholder, $container);
+            $replacement = $repository->getReplacement($placeholder, $tags);
             $string = str_replace('${' . $placeholder . '}', $replacement, $string);
         }
         return $string;
@@ -39,15 +39,13 @@ final class RuntimePlaceholdersTransformation extends RuntimeCallee implements P
         //@todo
     }
 
-    public static function supportsDefinitionAndArgument(DefinitionCall $definitionCall, $argumentValue) {
-        if ($definitionCall->getStep() instanceof PlaceholderContainerStepNode) {
+    public static function supportsDefinitionAndArgument($tags, $argumentValue) {
             if (is_string($argumentValue) && preg_match(self::USER_DEFINED_PLACEHOLDER_REGEX, $argumentValue) === 1) {
                 return true;
             }
             if ($argumentValue instanceof TableNode) {
                 return false;
             }
-        }
         return false;
     }
 
@@ -55,13 +53,13 @@ final class RuntimePlaceholdersTransformation extends RuntimeCallee implements P
         return (preg_match(self::USER_DEFINED_PLACEHOLDER_REGEX, $table->getTableAsString()) === 1);
     }
 
-    public static function transformArgument($argumentValue, PlaceholdersRepository $repository, PlaceholderContainer $container) {
+    public static function transformArgument($argumentValue, PlaceholdersRepository $repository, $tags) {
         if (is_string($argumentValue)) {
-            return self::replaceStringPlaceholders($argumentValue, $repository, $container);
+            return self::replaceStringPlaceholders($argumentValue, $repository, $tags);
         }
 
         if ($argumentValue instanceof TableNode) {
-            return self::replaceTablePlaceholders($table, $repository, $container);
+            return self::replaceTablePlaceholders($table, $repository, $tags);
         }
     }
 

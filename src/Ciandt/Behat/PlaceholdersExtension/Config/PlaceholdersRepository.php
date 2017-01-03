@@ -78,13 +78,15 @@ class PlaceholdersRepository
         $this->environment = $environment;
     }
     
-    public function getReplacement($placeholder, PlaceholderContainer $container) {
-        $placeholders = $this->getSectionPlaceholders($container);
-        
-        $variant = $container->getVariant();
+    public function getReplacement($placeholder, $tags) {
+        $configTag = PlaceholderUtils::getConfigTag($tags);
+        $configKey = PlaceholderUtils::getConfigKey($configTag);
+        $section = PlaceholderUtils::getSectionKey($configTag);
+        $placeholders = $this->getSectionPlaceholders($configKey, $section);
+
+        $variant = end(PlaceholderUtils::filterVariantTags($tags, false));
         $environment = $this->getEnvironment();
-        $configPath = $this->getFilePath($container->getConfigKey());
-        $section = $container->getSectionKey();
+        $configPath = $this->getFilePath($configKey);
         $keys = array('$' . $variant, '$' . $environment, $placeholder);
         $treePosition = "$configPath>$section>placeholders";
 
@@ -107,17 +109,15 @@ class PlaceholdersRepository
         }
     }
     
-    private function getSectionPlaceholders(PlaceholderContainer $container){
-        $configKey = $container->getConfigKey();
+    private function getSectionPlaceholders($configKey, $section){
         $config = $this->getConfig($configKey);
-        $sectionKey = $container->getSectionKey();
-        if (!key_exists($sectionKey, $config)){
+        if (!key_exists($section, $config)){
             throw new MissingSectionException(
                     $configKey,
                     $this->getFilePath($configKey),
-                    $sectionKey);
+                    $section);
         }
-        return $config[$sectionKey]['placeholders'];
+        return $config[$section]['placeholders'];
     }
             
 }
