@@ -83,8 +83,9 @@ class PlaceholdersRepository
         $configKey = PlaceholderUtils::getConfigKey($configTag);
         $section = PlaceholderUtils::getSectionKey($configTag);
         $placeholders = $this->getSectionPlaceholders($configKey, $section);
-
-        $variant = end(PlaceholderUtils::filterVariantTags($tags, false));
+        
+        $variantTags = PlaceholderUtils::filterVariantTags($tags, false);
+        $variant = end($variantTags);
         $environment = $this->getEnvironment();
         $configPath = $this->getFilePath($configKey);
         $keys = array('$' . $variant, '$' . $environment, $placeholder);
