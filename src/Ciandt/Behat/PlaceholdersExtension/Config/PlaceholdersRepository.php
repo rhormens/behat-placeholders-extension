@@ -91,7 +91,13 @@ class PlaceholdersRepository
         $keys = array('$' . $variant, '$' . $environment, $placeholder);
         $treePosition = "$configPath>$section>placeholders";
 
-        return $this->recursivePlaceholderSearch($keys, $placeholders, $treePosition);
+        $replacement = $this->recursivePlaceholderSearch($keys, $placeholders, $treePosition);
+        
+        if ($replacement){
+            return $replacement;
+        } else {
+            throw new UndefinedPlaceholderException("No placeholder is defined on $treePosition>$key for variant $variant");
+        }
         
     }
     
@@ -102,12 +108,18 @@ class PlaceholdersRepository
         }
         $key = array_pop($keys);
         if (key_exists($key, $values)) {
-            return $this->recursivePlaceholderSearch($keys, $values[$key], "$treePosition>$key");
-        } elseif (key_exists('$default', $values)) {
-            return $this->recursivePlaceholderSearch($keys, $values['$default'], $treePosition . '>$default');
-        } else {
-            throw new UndefinedPlaceholderException("No placeholder is defined on $treePosition>$key");
-        }
+            $specificValue = $this->recursivePlaceholderSearch($keys, $values[$key], "$treePosition>$key");
+            if ($specificValue) {
+                return $specificValue;
+            }
+        } if (key_exists('$default', $values)) {
+            $defaultValue = $this->recursivePlaceholderSearch($keys, $values['$default'], $treePosition . '>$default');
+            if ($defaultValue) {
+                return $defaultValue;
+            }
+        } 
+        
+        return false;
     }
     
     private function getSectionPlaceholders($configKey, $section){
