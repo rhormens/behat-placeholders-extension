@@ -4,12 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [v1.2.0] - 2017-03-26
 ### Added
 - CHANGELOG.md
 
-
 ### Changed
-- Start keeping track of changes on CHANGELOG.md
-- Variant branching done earlier (right after Gherkin's .feature parsing phase)
+- Started keeping track of changes on CHANGELOG.md
+- Variant branching done earlier (right after Gherkin's *.feature parsing phase)
 
+### Fixed
+- Behat --tags filter now works correctly on variant tagged scenarios
