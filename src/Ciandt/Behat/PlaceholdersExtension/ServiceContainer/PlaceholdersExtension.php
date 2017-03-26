@@ -1,6 +1,7 @@
 <?php
 namespace Ciandt\Behat\PlaceholdersExtension\ServiceContainer;
 
+use Behat\Behat\Gherkin\ServiceContainer\GherkinExtension;
 use Behat\Behat\Tester\ServiceContainer\TesterExtension;
 use Behat\Behat\Transformation\ServiceContainer\TransformationExtension;
 use Behat\Testwork\Cli\ServiceContainer\CliExtension;
@@ -80,7 +81,7 @@ final class PlaceholdersExtension implements Extension
     public function load(ContainerBuilder $container, array $config)
     {
         $this->initializePlaceholderUtils($config['variant_tags'], $config['config_tags']);
-        $this->loadScenarioBranchingFeatureTester($container, $config['variant_tags']);
+        $this->loadScenarioBranchingFileLoader($container);
         $this->loadPlaceholdersRepository($container, $config['config_tags']);
         $this->loadPlaceholdersController($container);
         $this->loadBeforeScenarioSubscriber($container);
@@ -98,7 +99,8 @@ final class PlaceholdersExtension implements Extension
         $container->setDefinition(self::PLACEHOLDERS_CONTROLLER_ID, $definition);
     }
 
-    protected function initializePlaceholderUtils($variantTags,$configTags){
+    protected function initializePlaceholderUtils($variantTags, $configTags)
+    {
         PlaceholderUtils::setVariantTags($variantTags);
         PlaceholderUtils::setConfigKeys(array_keys($configTags));
     }
@@ -120,13 +122,13 @@ final class PlaceholdersExtension implements Extension
      *
      * @param ContainerBuilder $container
      */
-    protected function loadScenarioBranchingFeatureTester(ContainerBuilder $container, $variantTags)
+    protected function loadScenarioBranchingFileLoader(ContainerBuilder $container)
     {
-        $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Tester\ScenarioBranchingFeatureTester', array(
-            new Reference(TesterExtension::SPECIFICATION_TESTER_ID),
-            new Reference(self::PLACEHOLDERS_REPOSITIORY_ID)
+        $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Gherkin\ScenarioBranchingFileLoader', array(
+            new Reference('gherkin.parser'),
+            new Definition('Behat\Gherkin\Cache\MemoryCache')
         ));
-        $definition->addTag(TesterExtension::SPECIFICATION_TESTER_WRAPPER_TAG, array('priority' => 1000));
+        $definition->addTag(GherkinExtension::LOADER_TAG, array('priority' => 100));
         $container->setDefinition(self::VARIANTS_PREPROCESSOR_ID, $definition);
     }
 
@@ -156,7 +158,8 @@ final class PlaceholdersExtension implements Extension
         $container->setDefinition(self::STEPS_DECORATOR_ID, $definition);
     }
     
-    protected function loadBeforeScenarioSubscriber(ContainerBuilder $container){
+    protected function loadBeforeScenarioSubscriber(ContainerBuilder $container)
+    {
         $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Subscriber\BeforeScenarioSubscriber');
         $definition->addTag(EventDispatcherExtension::SUBSCRIBER_TAG, array('priority' => 0));
         $container->setDefinition(self::BEFORE_SCENARIO_SUBSCRIBER_ID, $definition);

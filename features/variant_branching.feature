@@ -122,3 +122,24 @@ Feature: Variant Branching
           2 scenarios (2 passed)
           2 steps (2 passed)
           """
+
+    Scenario: Running single variant from multi-variant scenario using tag filters
+        Given a file named "features/filter_flavors.feature" with:
+          """
+          Feature: Multiple flavors
+            @ice_cream @vanilla @chocolate @other
+            Scenario: Offer several ice cream flavors
+              Given the ice cream truck has "${flavor}" ice cream
+          """
+
+        When I run "behat --tags '@vanilla' features/filter_flavors.feature"
+        Then it should pass with:
+          """
+            @ice_cream @other @vanilla
+            Scenario: Offer several ice cream flavors             # features/filter_flavors.feature:3
+              Given the ice cream truck has "${flavor}" ice cream # FeatureContext::echoFlavor()
+                │ It sells vanilla ice cream
+          
+          1 scenario (1 passed)
+          1 step (1 passed)
+          """
