@@ -14,3 +14,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - Behat --tags filter now works correctly on variant tagged scenarios
+
+[Unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v1.2.0...HEAD
+[v1.2.0]: https://github.com/olivierlacan/keep-a-changelog/compare/v1.1.1...v1.2.0
