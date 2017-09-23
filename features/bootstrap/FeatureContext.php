@@ -8,8 +8,8 @@
  */
 use Behat\Behat\Context\Context;
 use Behat\Gherkin\Node\PyStringNode;
-use Symfony\Component\Process\InputStream;
 use Symfony\Component\Process\PhpExecutableFinder;
+use PHPUnit\Framework\Assert as PHPUnit_Framework_Assert;
 use Symfony\Component\Process\Process;
 /**
  * Behat test suite context.
