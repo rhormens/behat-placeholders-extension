@@ -33,9 +33,7 @@ class ScenarioBranchingFileLoader extends GherkinFileLoader
         $filename = $this->findRelativePath($path);
         $content = file_get_contents($path);
         $feature = $this->parser->parse($content, $filename);
-        $feature = $this->branchFeatureVariants($feature);
-                
-        return $feature;
+        return null === $feature? $feature : $this->branchFeatureVariants($feature);
     }
     
     /**
