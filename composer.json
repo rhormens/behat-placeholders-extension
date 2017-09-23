@@ -2,7 +2,7 @@
     "name": "ciandt/behat-placeholders-extension",
     "type": "behat-extension",
     "description": "Extension to use placeholder parameters on scenarios",
-    "keywords": ["behat", "evironment", "placeholder", "variant"],
+    "keywords": ["behat", "environment", "placeholder", "variant"],
     "homepage": "https://github.com/ciandt-dev/behat-placeholders-extension",
     "license": "GPL-3.0",
     "authors": [
@@ -28,6 +28,6 @@
     },
     "require-dev": {
         "symfony/process": "~2.5|~3.0",
-        "phpunit/phpunit": "^6.3"
+        "phpunit/phpunit": "^5.7"
     }
 }
