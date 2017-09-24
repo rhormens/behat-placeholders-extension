@@ -14,32 +14,23 @@ use Ciandt\Behat\PlaceholdersExtension\Transformation\RuntimePlaceholdersTransfo
  */
 class PlaceholdersTransformer implements ArgumentTransformer
 {
-    private $beforeScenarioSubscriber;
+   
+    private $repository;
     
-    private $placeholdersRepository;
-    
-    public function __construct(PlaceholdersRepository $placeholdersRepository, BeforeScenarioSubscriber $beforeScenarioSubscriber) {
-        $this->placeholdersRepository = $placeholdersRepository;
-        $this->beforeScenarioSubscriber = $beforeScenarioSubscriber;
+    public function __construct(PlaceholdersRepository $repository) {
+        $this->repository = $repository;
     }
 
     
     public function supportsDefinitionAndArgument(DefinitionCall $definitionCall, $argumentIndex, $argumentValue) {
-        $tags = $this->beforeScenarioSubscriber->getScenarioTags();
-        return RuntimePlaceholdersTransformation::supportsDefinitionAndArgument($tags, $argumentValue);        
+        return RuntimePlaceholdersTransformation::supportsArgument($argumentValue);        
     }
 
     public function transformArgument(DefinitionCall $definitionCall, $argumentIndex, $argumentValue) {
-        $tags = $this->beforeScenarioSubscriber->getScenarioTags();
-        $transformedArgument = $argumentValue;
-        if (RuntimePlaceholdersTransformation::supportsDefinitionAndArgument($tags, $argumentValue)){
-            $transformedArgument = RuntimePlaceholdersTransformation::transformArgument(
-                    $transformedArgument,
-                    $this->placeholdersRepository,
-                    $tags);
+        if (RuntimePlaceholdersTransformation::supportsArgument($argumentValue)){
+            return RuntimePlaceholdersTransformation::transformArgument($argumentValue,$this->repository);
         }
-        
-        return $transformedArgument;
+        return $argumentValue;
     }
 
 }

@@ -4,6 +4,7 @@
 namespace Ciandt\Behat\PlaceholdersExtension\Transformation;
 
 use Behat\Behat\Definition\Call\DefinitionCall;
+use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
 use Behat\Testwork\Call\RuntimeCallee;
 use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
@@ -13,54 +14,67 @@ use Ciandt\Behat\PlaceholdersExtension\PlaceholderContainer\PlaceholderContainer
 /**
  *
  */
-final class RuntimePlaceholdersTransformation extends RuntimeCallee implements PlaceholdersTransformation {
-
-    const USER_DEFINED_PLACEHOLDER_REGEX = '/\${(?P<placeholder>[a-zA-Z0-9_-]+)}/';
+ class RuntimePlaceholdersTransformation extends RuntimeCallee implements PlaceholdersTransformation {
 
     public function __toString() {
         return 'UserDefinedPlaceholderTransform';
     }
 
     public function getPattern() {
-        return self::USER_DEFINED_PLACEHOLDER_REGEX;
+        return PlaceholdersRepository::PLACEHOLDER_REGEX;
     }
 
-    private static function replaceStringPlaceholders($string, PlaceholdersRepository $repository, $tags) {
-        preg_match_all(self::USER_DEFINED_PLACEHOLDER_REGEX, $string, $matches, PREG_SET_ORDER);
+    protected static function replaceStringPlaceholders(&$string, $repository) {
+        preg_match_all(PlaceholdersRepository::PLACEHOLDER_REGEX, $string, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
             $placeholder = $match['placeholder'];
-            $replacement = $repository->getReplacement($placeholder, $tags);
+            $replacement = $repository->getReplacement($placeholder);
             $string = str_replace('${' . $placeholder . '}', $replacement, $string);
         }
         return $string;
     }
 
-    private static function replaceTablePlaceholders(TableNode $table, PlaceholdersRepository $repository, PlaceholderContainerStepNode $container) {
-        //@todo
-    }
+    public static function transformArgument($argument, $repository) {
+        if (is_string($argument)) {
+            return self::replaceStringPlaceholders($argument, $repository);
+        }
 
-    public static function supportsDefinitionAndArgument($tags, $argumentValue) {
-            if (is_string($argumentValue) && preg_match(self::USER_DEFINED_PLACEHOLDER_REGEX, $argumentValue) === 1) {
-                return true;
+        if ($argument instanceof PyStringNode) {
+            $strings = $argument->getStrings();
+            foreach ($strings as &$string){
+                self::replaceStringPlaceholders($string, $repository);
             }
-            if ($argumentValue instanceof TableNode) {
-                return false;
-            }
+            return new PyStringNode($strings, $argument->getLine());
+        }
+        
+        if ($argument instanceof TableNode) {
+            $table = $argument->getTable();
+            array_walk_recursive($table, 'self::replaceTablePlaceholders', $repository);
+            return new TableNode($table);
+        }
+    }
+    
+    private static function replaceTablePlaceholders(&$item, $key, $repository){
+        $item = self::replaceStringPlaceholders($item, $repository);
+    }
+    
+
+    public static function supportsArgument($argument)
+    {
+        if (is_string($argument) && preg_match(PlaceholdersRepository::PLACEHOLDER_REGEX, $argument) === 1) {
+            return true;
+        }
+
+        if ($argument instanceof PyStringNode &&
+            preg_match(PlaceholdersRepository::PLACEHOLDER_REGEX, $argument->getRaw()) === 1) {
+            return true;
+        }
+        
+        if ($argument instanceof TableNode &&
+            preg_match(PlaceholdersRepository::PLACEHOLDER_REGEX, $argument->getTableAsString()) === 1) {
+            return true;
+        }
+        
         return false;
     }
-
-    private static function tableHasPlaceholders(TableNode $table) {
-        return (preg_match(self::USER_DEFINED_PLACEHOLDER_REGEX, $table->getTableAsString()) === 1);
-    }
-
-    public static function transformArgument($argumentValue, PlaceholdersRepository $repository, $tags) {
-        if (is_string($argumentValue)) {
-            return self::replaceStringPlaceholders($argumentValue, $repository, $tags);
-        }
-
-        if ($argumentValue instanceof TableNode) {
-            return self::replaceTablePlaceholders($table, $repository, $tags);
-        }
-    }
-
 }

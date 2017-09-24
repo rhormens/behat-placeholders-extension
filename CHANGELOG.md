@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased] - 2017-09-24
+### Added
+- Placeholders chaining: use placeholders inside a placeholder
+- Runtime placeholders: get or set placeholders inside your context
+
 ## [v1.2.1] - 2017-09-23
 ### Fixed
 - Having empty .feature files does not cause an exception anymore

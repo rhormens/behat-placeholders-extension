@@ -6,6 +6,7 @@ use Ciandt\Behat\PlaceholdersExtension\Utils\PlaceholderUtils;
 use Ciandt\Behat\PlaceholdersExtension\PlaceholderContainer\PlaceholderContainer;
 use Ciandt\Behat\PlaceholdersExtension\Exception\MissingSectionException;
 use Ciandt\Behat\PlaceholdersExtension\Exception\UndefinedPlaceholderException;
+use Exception;
 
 /**
  * Description of ConfigsRepository
@@ -14,17 +15,23 @@ use Ciandt\Behat\PlaceholdersExtension\Exception\UndefinedPlaceholderException;
  */
 class PlaceholdersRepository
 {
-
+    const PLACEHOLDER_REGEX = '/\${(?P<placeholder>[a-zA-Z0-9_-]+)}/';
+    
     private $configs;
+    
+    private $beforeScenarioSubscriber;
+    
+    private $placeholders = array();
 
     /**
      * @var string
      */
     private $environment;
 
-    public function __construct($configs_mapping)
+    public function __construct($configs_mapping, $beforeScenarioSubscriber)
     {
         $this->configs = $this->loadConfigFiles($configs_mapping);
+        $this->beforeScenarioSubscriber = $beforeScenarioSubscriber;
     }
 
     /**
@@ -38,9 +45,11 @@ class PlaceholdersRepository
     }
 
     /**
+     * reads the YAML placeholder definitions and returns an associative array
      *
      * @param type $config_files
-     * @todo user %paths.base% value
+     * @todo use %paths.base% value
+     * @return array
      */
     private function loadConfigFiles($configs_mapping)
     {
@@ -52,7 +61,7 @@ class PlaceholdersRepository
         return $placeholder_maps;
     }
 
-    public function getConfig($key)
+    private function getConfig($key)
     {
         if (key_exists($key, $this->configs)) {
             return $this->configs[$key]['config'];
@@ -60,7 +69,7 @@ class PlaceholdersRepository
         return null;
     }
 
-    public function getFilePath($key)
+    private function getFilePath($key)
     {
          if (key_exists($key, $this->configs)) {
             return $this->configs[$key]['path'];
@@ -78,7 +87,26 @@ class PlaceholdersRepository
         $this->environment = $environment;
     }
     
-    public function getReplacement($placeholder, $tags) {
+    private function getScenarioTags(){
+        return $this->beforeScenarioSubscriber->getScenarioTags();
+    }
+
+    public function getReplacement($placeholder, $replaced = array()) {
+        
+        // if the current placeholder was already replaced before, this is a cyclic dependecy
+        if (in_array($placeholder, $replaced)){
+            $tree = implode('>', $replaced);
+            throw new Exception("Cyclic placeholder dependecy detected. Trying to replace $placeholder again when already replaced: $tree");
+        }
+        
+        // if there's a runtime placeholder defined for that key, return it right away
+        if (array_key_exists($placeholder, $this->placeholders)) {
+            return $this->placeholders[$placeholder];
+        }
+        
+        $tags = $this->getScenarioTags();
+        
+        //@todo abort if there's no config tag
         $configTag = PlaceholderUtils::getConfigTag($tags);
         $configKey = PlaceholderUtils::getConfigKey($configTag);
         $section = PlaceholderUtils::getSectionKey($configTag);
@@ -93,17 +121,27 @@ class PlaceholdersRepository
 
         $replacement = $this->recursivePlaceholderSearch($keys, $placeholders, $treePosition);
         
-        if ($replacement){
+        if (is_null($replacement)){
+            throw new UndefinedPlaceholderException("No $placeholder placeholder was defined on runtime or on $treePosition>$placeholder for variant $variant and environment $environment");
+        } 
+        
+        //if the replaced string doesn't have placeholders itself
+        if (preg_match_all(self::PLACEHOLDER_REGEX, $replacement, $matches, PREG_SET_ORDER) == 0){
             return $replacement;
-        } else {
-            throw new UndefinedPlaceholderException("No placeholder is defined on $treePosition>$key for variant $variant");
         }
+        
+        //if it does have, replace them before returning
+        foreach ($matches as $match) {
+            $replaced[] = $placeholder;
+            $replacement = str_replace('${' . $match['placeholder'] . '}', $this->getReplacement($match['placeholder'], $replaced), $replacement);
+        }
+        return $replacement;
         
     }
     
     private function recursivePlaceholderSearch($keys, $values, $treePosition)
     {
-        if (empty($keys) || is_string($values)) {
+        if (empty($keys) || is_scalar($values)) {
             return $values;
         }
         $key = array_pop($keys);
@@ -119,12 +157,12 @@ class PlaceholdersRepository
             }
         } 
         
-        return false;
+        return null;
     }
     
     private function getSectionPlaceholders($configKey, $section){
         $config = $this->getConfig($configKey);
-        if (!key_exists($section, $config)){
+        if (!isset($config) || !key_exists($section, $config)){
             throw new MissingSectionException(
                     $configKey,
                     $this->getFilePath($configKey),
@@ -132,5 +170,15 @@ class PlaceholdersRepository
         }
         return $config[$section]['placeholders'];
     }
-            
+    
+    public function setPlaceholder($key, $value, $environment = '$default', $variant = '$default') {
+        if (!isset($this->placeholders[$key])) {
+            $this->placeholders[$key] = array();
+        }
+        if (!isset($this->placeholders[$key][$environment])) {
+            $this->placeholders[$key][$environment] = array();
+        }
+        $this->placeholders[$key][$environment][$variant] = $value;
+    }
+
 }

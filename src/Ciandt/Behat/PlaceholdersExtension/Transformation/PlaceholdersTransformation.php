@@ -13,8 +13,8 @@ use Ciandt\Behat\PlaceholdersExtension\PlaceholderContainer\PlaceholderContainer
 interface PlaceholdersTransformation extends Transformation {
     
    
-    public static function supportsDefinitionAndArgument($tags, $argumentValue);
+    public static function supportsArgument($argument);
     
-    public static function transformArgument($argumentValue, PlaceholdersRepository $repository, $tags);
+    public static function transformArgument($argument, $repository);
     
 }

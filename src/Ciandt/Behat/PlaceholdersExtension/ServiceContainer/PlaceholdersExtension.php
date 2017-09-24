@@ -1,6 +1,7 @@
 <?php
 namespace Ciandt\Behat\PlaceholdersExtension\ServiceContainer;
 
+use Behat\Behat\Context\ServiceContainer\ContextExtension;
 use Behat\Behat\Gherkin\ServiceContainer\GherkinExtension;
 use Behat\Behat\Tester\ServiceContainer\TesterExtension;
 use Behat\Behat\Transformation\ServiceContainer\TransformationExtension;
@@ -24,6 +25,7 @@ final class PlaceholdersExtension implements Extension
     const VARIANTS_PREPROCESSOR_ID = 'placeholders.variants_preprocessor';
     const STEPS_DECORATOR_ID = 'placeholders.steps_decorator';
     const BEFORE_SCENARIO_SUBSCRIBER_ID = 'placeholders.before_scenario';
+    const CONTEXT_INITIALIZER_ID = 'placeholders.context_initializer';
 
     /**
      * Returns the extension config key.
@@ -65,6 +67,7 @@ final class PlaceholdersExtension implements Extension
             ->prototype('scalar')->end()
             ->end()
             ->arrayNode('config_tags')
+            ->treatNullLike(array())
             ->useAttributeAsKey('tag')
             ->prototype('scalar')->end()
             ->end()
@@ -86,6 +89,7 @@ final class PlaceholdersExtension implements Extension
         $this->loadPlaceholdersController($container);
         $this->loadBeforeScenarioSubscriber($container);
         $this->loadPlaceholdersTransformer($container);
+        $this->loadContextInitializer($container);
     }
 
     /**
@@ -113,7 +117,8 @@ final class PlaceholdersExtension implements Extension
     protected function loadPlaceholdersRepository(ContainerBuilder $container, $configs_mapping)
     {
         $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository', array(
-            $configs_mapping
+            $configs_mapping,
+            new Reference(self::BEFORE_SCENARIO_SUBSCRIBER_ID)
         ));
         $container->setDefinition(self::PLACEHOLDERS_REPOSITIORY_ID, $definition);
     }
@@ -141,8 +146,7 @@ final class PlaceholdersExtension implements Extension
     protected function loadPlaceholdersTransformer(ContainerBuilder $container)
     {
         $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Transformer\PlaceholdersTransformer', array(
-            new Reference(self::PLACEHOLDERS_REPOSITIORY_ID),
-            new Reference(self::BEFORE_SCENARIO_SUBSCRIBER_ID)
+            new Reference(self::PLACEHOLDERS_REPOSITIORY_ID)
         ));
         $definition->addTag(TransformationExtension::ARGUMENT_TRANSFORMER_TAG, array('priority' => 9999999));
         $container->setDefinition(self::PLACEHOLDERS_TRANSFORMER_ID, $definition);
@@ -163,5 +167,14 @@ final class PlaceholdersExtension implements Extension
         $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Subscriber\BeforeScenarioSubscriber');
         $definition->addTag(EventDispatcherExtension::SUBSCRIBER_TAG, array('priority' => 0));
         $container->setDefinition(self::BEFORE_SCENARIO_SUBSCRIBER_ID, $definition);
+    }
+    
+    private function loadContextInitializer(ContainerBuilder $container)
+    {
+        $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Initializer\PlaceholdersContextInitializer', array(
+            new Reference(self::PLACEHOLDERS_REPOSITIORY_ID)
+        ));
+        $definition->addTag(ContextExtension::INITIALIZER_TAG, array('priority' => 0));
+        $container->setDefinition(self::CONTEXT_INITIALIZER_ID, $definition);
     }
 }
