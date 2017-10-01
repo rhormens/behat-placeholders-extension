@@ -1,21 +1,12 @@
 <?php
 
-/*
- * This file is part of the Behat MinkExtension.
- * (c) Konstantin Kudryashov <ever.zet@gmail.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace Ciandt\Behat\PlaceholdersExtension\Initializer;
 
 use Behat\Behat\Context\Context;
 use Behat\Behat\Context\Initializer\ContextInitializer;
 use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
 
-
-class PlaceholdersContextInitializer implements ContextInitializer
+class PlaceholdersAwareInitializer implements ContextInitializer
 {
     private $repository;
 
@@ -26,7 +17,6 @@ class PlaceholdersContextInitializer implements ContextInitializer
     public function __construct(PlaceholdersRepository $repository)
     {
         $this->repository = $repository;
-
     }
 
     /**
@@ -36,9 +26,8 @@ class PlaceholdersContextInitializer implements ContextInitializer
      */
     public function initializeContext(Context $context)
     {
-        if ($context instanceof PlaceholderConsumerInterface) {
+        if ($context instanceof PlaceholdersAwareInterface) {
             $context->setPlaceholdersRepository($this->repository);
         }
-
     }
 }
