@@ -6,9 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - 2017-09-24
 ### Added
+- Support for placeholders on PyStrings and TableNodes
 - Placeholders chaining: use placeholders inside a placeholder
-- Runtime placeholders: get or set placeholders inside your context
-
+- Context Initializer: manipulate placeholders inside your Context
 ## [v1.2.1] - 2017-09-23
 ### Fixed
 - Having empty .feature files does not cause an exception anymore

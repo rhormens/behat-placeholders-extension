@@ -21,7 +21,7 @@ class PlaceholdersRepository
     
     private $beforeScenarioSubscriber;
     
-    private $placeholders = array();
+    private $runtimePlaceholders = array();
 
     /**
      * @var string
@@ -99,34 +99,39 @@ class PlaceholdersRepository
             throw new Exception("Cyclic placeholder dependecy detected. Trying to replace $placeholder again when already replaced: $tree");
         }
         
-        // if there's a runtime placeholder defined for that key, return it right away
-        if (array_key_exists($placeholder, $this->placeholders)) {
-            return $this->placeholders[$placeholder];
-        }
-        
         $tags = $this->getScenarioTags();
         
         //@todo abort if there's no config tag
         $configTag = PlaceholderUtils::getConfigTag($tags);
         $configKey = PlaceholderUtils::getConfigKey($configTag);
-        $section = PlaceholderUtils::getSectionKey($configTag);
-        $placeholders = $this->getSectionPlaceholders($configKey, $section);
-        
+
         $variantTags = PlaceholderUtils::filterVariantTags($tags, false);
         $variant = end($variantTags);
         $environment = $this->getEnvironment();
-        $configPath = $this->getFilePath($configKey);
-        $keys = array('$' . $variant, '$' . $environment, $placeholder);
-        $treePosition = "$configPath>$section>placeholders";
 
-        $replacement = $this->recursivePlaceholderSearch($keys, $placeholders, $treePosition);
+        $keys = array('$' . $variant, '$' . $environment, $placeholder);
+
+        // First try to find it in the runtime placeholders
+        $replacement = $this->recursivePlaceholderSearch($keys, $this->runtimePlaceholders);
+
+
+        // Then look in the placeholder files
+        if ($replacement === null && $configTag !== false ) {
+            $section = PlaceholderUtils::getSectionKey($configTag);
+            $placeholders = $this->getSectionPlaceholders($configKey, $section);
+            $replacement = $this->recursivePlaceholderSearch($keys, $placeholders);
+        }
+
+        if ($replacement === null && $configTag !== false){
+            $configPath = $this->getFilePath($configKey);
+            $treePosition = "$configPath>$section>placeholders";
+            throw new UndefinedPlaceholderException("No $placeholder replacement was defined on runtime or on $treePosition>$placeholder for variant $variant and environment $environment");
+        } elseif ($replacement === null && $configTag === false) {
+            throw new UndefinedPlaceholderException("No $placeholder replacement was defined on runtime, and this scenario is not linked with any replacements file");
+        }
         
-        if (is_null($replacement)){
-            throw new UndefinedPlaceholderException("No $placeholder placeholder was defined on runtime or on $treePosition>$placeholder for variant $variant and environment $environment");
-        } 
-        
-        //if the replaced string doesn't have placeholders itself
-        if (preg_match_all(self::PLACEHOLDER_REGEX, $replacement, $matches, PREG_SET_ORDER) == 0){
+        //if the replaced string doesn't have placeholders itself, return it right away
+        if (preg_match_all(self::PLACEHOLDER_REGEX, $replacement, $matches, PREG_SET_ORDER) == 0) {
             return $replacement;
         }
         
@@ -136,49 +141,51 @@ class PlaceholdersRepository
             $replacement = str_replace('${' . $match['placeholder'] . '}', $this->getReplacement($match['placeholder'], $replaced), $replacement);
         }
         return $replacement;
-        
     }
     
-    private function recursivePlaceholderSearch($keys, $values, $treePosition)
+    private function recursivePlaceholderSearch($keys, $values)
     {
         if (empty($keys) || is_scalar($values)) {
             return $values;
         }
         $key = array_pop($keys);
         if (key_exists($key, $values)) {
-            $specificValue = $this->recursivePlaceholderSearch($keys, $values[$key], "$treePosition>$key");
+            $specificValue = $this->recursivePlaceholderSearch($keys, $values[$key]);
             if ($specificValue) {
                 return $specificValue;
             }
         } if (key_exists('$default', $values)) {
-            $defaultValue = $this->recursivePlaceholderSearch($keys, $values['$default'], $treePosition . '>$default');
+            $defaultValue = $this->recursivePlaceholderSearch($keys, $values['$default']);
             if ($defaultValue) {
                 return $defaultValue;
             }
-        } 
+        }
         
         return null;
     }
     
-    private function getSectionPlaceholders($configKey, $section){
+    private function getSectionPlaceholders($configKey, $section)
+    {
         $config = $this->getConfig($configKey);
-        if (!isset($config) || !key_exists($section, $config)){
+        if (!isset($config) || !key_exists($section, $config)) {
             throw new MissingSectionException(
-                    $configKey,
-                    $this->getFilePath($configKey),
-                    $section);
+                $configKey,
+                $this->getFilePath($configKey),
+                $section
+            );
         }
         return $config[$section]['placeholders'];
     }
     
-    public function setPlaceholder($key, $value, $environment = '$default', $variant = '$default') {
-        if (!isset($this->placeholders[$key])) {
-            $this->placeholders[$key] = array();
+    public function setPlaceholder($key, $value, $environment = '$default', $variant = '$default')
+    {
+        if (!isset($this->runtimePlaceholders[$key])) {
+            $this->runtimePlaceholders[$key] = array();
         }
-        if (!isset($this->placeholders[$key][$environment])) {
-            $this->placeholders[$key][$environment] = array();
+        if (!isset($this->runtimePlaceholders[$key][$environment])) {
+            $this->runtimePlaceholders[$key][$environment] = array();
         }
-        $this->placeholders[$key][$environment][$variant] = $value;
+        $this->runtimePlaceholders[$key][$environment][$variant] = $value;
     }
 
 }

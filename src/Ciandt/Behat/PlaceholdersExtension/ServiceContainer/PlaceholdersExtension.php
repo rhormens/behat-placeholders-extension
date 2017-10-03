@@ -171,7 +171,7 @@ final class PlaceholdersExtension implements Extension
     
     private function loadContextInitializer(ContainerBuilder $container)
     {
-        $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Initializer\PlaceholdersContextInitializer', array(
+        $definition = new Definition('Ciandt\Behat\PlaceholdersExtension\Initializer\PlaceholdersAwareInitializer', array(
             new Reference(self::PLACEHOLDERS_REPOSITIORY_ID)
         ));
         $definition->addTag(ContextExtension::INITIALIZER_TAG, array('priority' => 0));

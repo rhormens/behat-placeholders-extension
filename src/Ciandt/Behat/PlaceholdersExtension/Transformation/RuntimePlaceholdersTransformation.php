@@ -8,8 +8,6 @@ use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
 use Behat\Testwork\Call\RuntimeCallee;
 use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
-use Ciandt\Behat\PlaceholdersExtension\PlaceholderContainer\PlaceholderContainer;
-use Ciandt\Behat\PlaceholdersExtension\PlaceholderContainer\PlaceholderContainerStepNode;
 
 /**
  *
@@ -24,7 +22,7 @@ use Ciandt\Behat\PlaceholdersExtension\PlaceholderContainer\PlaceholderContainer
         return PlaceholdersRepository::PLACEHOLDER_REGEX;
     }
 
-    protected static function replaceStringPlaceholders(&$string, $repository) {
+    protected static function replaceStringPlaceholders(&$string, PlaceholdersRepository $repository) {
         preg_match_all(PlaceholdersRepository::PLACEHOLDER_REGEX, $string, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
             $placeholder = $match['placeholder'];

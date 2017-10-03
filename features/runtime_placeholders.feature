@@ -9,10 +9,10 @@ Feature: Scenario Outline Placeholders
       """
       <?php
       use Behat\Behat\Context\Context;
-      use Ciandt\Behat\PlaceholdersExtension\Initializer\PlaceholderConsumerInterface;
+      use Ciandt\Behat\PlaceholdersExtension\Initializer\PlaceholdersAwareInterface;
       use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
 
-      class FeatureContext implements Context, PlaceholderConsumerInterface
+      class FeatureContext implements Context, PlaceholdersAwareInterface
       {
 
          public function setPlaceholdersRepository(PlaceholdersRepository $repository)
