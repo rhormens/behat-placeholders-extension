@@ -86,6 +86,6 @@ Feature: Placeholder chaining
           
             Scenario: Sell a branded ice cream flavor               # features/placeholder_chaining.feature:3
               Given the ice cream truck sells "${cookie}" ice cream # FeatureContext::sellIceCream()
-                Fatal error: Cyclic placeholder dependecy detected. Trying to replace cookie again when already replaced: cookie>brand (Behat\Testwork\Call\Exception\FatalThrowableError)
+                %ACyclic placeholder dependecy detected. Trying to replace cookie again when already replaced: cookie>brand
           """
 

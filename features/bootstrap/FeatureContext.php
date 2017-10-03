@@ -228,7 +228,7 @@ class FeatureContext implements Context
      */
     public function theOutputShouldContain(PyStringNode $text)
     {
-        PHPUnit_Framework_Assert::assertContains($this->getExpectedOutput($text), $this->getOutput());
+        PHPUnit_Framework_Assert::assertStringMatchesFormat('%A'.$this->getExpectedOutput($text).'%A', $this->getOutput());
     }
     private function getExpectedOutput(PyStringNode $expectedText)
     {
