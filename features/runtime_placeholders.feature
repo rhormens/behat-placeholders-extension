@@ -1,8 +1,7 @@
-@tags
-Feature: Scenario Outline Placeholders
-  In order to avoid redundancy
-  As a feature writer
-  I need to use placeholders on scenario outlines
+Feature: Runtime Placeholders
+  In order to make the test suite more flexible
+  As a Context writer
+  I need to use placeholders on my steps and hooks
 
   Background:
     Given a file named "features/bootstrap/FeatureContext.php" with:
@@ -24,7 +23,7 @@ Feature: Scenario Outline Placeholders
          * @Given I like ":flavor" ice cream
          */
         public function gotIceCream($flavor) {
-            $this->placeholders->setPlaceholder("flavor",$flavor);
+            $this->placeholders->setReplacement("flavor",$flavor);
         }
           
         /**

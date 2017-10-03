@@ -91,16 +91,16 @@ class PlaceholdersRepository
         return $this->beforeScenarioSubscriber->getScenarioTags();
     }
 
-    public function getReplacement($placeholder, $replaced = array()) {
-        
+    private function replaceRecursively($placeholder, $replaced = array())
+    {
         // if the current placeholder was already replaced before, this is a cyclic dependecy
         if (in_array($placeholder, $replaced)){
             $tree = implode('>', $replaced);
             throw new Exception("Cyclic placeholder dependecy detected. Trying to replace $placeholder again when already replaced: $tree");
         }
-        
+
         $tags = $this->getScenarioTags();
-        
+
         //@todo abort if there's no config tag
         $configTag = PlaceholderUtils::getConfigTag($tags);
         $configKey = PlaceholderUtils::getConfigKey($configTag);
@@ -112,14 +112,14 @@ class PlaceholdersRepository
         $keys = array('$' . $variant, '$' . $environment, $placeholder);
 
         // First try to find it in the runtime placeholders
-        $replacement = $this->recursivePlaceholderSearch($keys, $this->runtimePlaceholders);
+        $replacement = $this->recursiveReplacementSearch($keys, $this->runtimePlaceholders);
 
 
         // Then look in the placeholder files
         if ($replacement === null && $configTag !== false ) {
             $section = PlaceholderUtils::getSectionKey($configTag);
             $placeholders = $this->getSectionPlaceholders($configKey, $section);
-            $replacement = $this->recursivePlaceholderSearch($keys, $placeholders);
+            $replacement = $this->recursiveReplacementSearch($keys, $placeholders);
         }
 
         if ($replacement === null && $configTag !== false){
@@ -129,33 +129,38 @@ class PlaceholdersRepository
         } elseif ($replacement === null && $configTag === false) {
             throw new UndefinedPlaceholderException("No $placeholder replacement was defined on runtime, and this scenario is not linked with any replacements file");
         }
-        
+
         //if the replaced string doesn't have placeholders itself, return it right away
         if (preg_match_all(self::PLACEHOLDER_REGEX, $replacement, $matches, PREG_SET_ORDER) == 0) {
             return $replacement;
         }
-        
+
         //if it does have, replace them before returning
         foreach ($matches as $match) {
             $replaced[] = $placeholder;
-            $replacement = str_replace('${' . $match['placeholder'] . '}', $this->getReplacement($match['placeholder'], $replaced), $replacement);
+            $replacement = str_replace('${' . $match['placeholder'] . '}', $this->replaceRecursively($match['placeholder'], $replaced), $replacement);
         }
         return $replacement;
     }
+
+    public function getReplacement($placeholder)
+    {
+        return $this->replaceRecursively($placeholder);
+    }
     
-    private function recursivePlaceholderSearch($keys, $values)
+    private function recursiveReplacementSearch($keys, $values)
     {
         if (empty($keys) || is_scalar($values)) {
             return $values;
         }
         $key = array_pop($keys);
         if (key_exists($key, $values)) {
-            $specificValue = $this->recursivePlaceholderSearch($keys, $values[$key]);
+            $specificValue = $this->recursiveReplacementSearch($keys, $values[$key]);
             if ($specificValue) {
                 return $specificValue;
             }
         } if (key_exists('$default', $values)) {
-            $defaultValue = $this->recursivePlaceholderSearch($keys, $values['$default']);
+            $defaultValue = $this->recursiveReplacementSearch($keys, $values['$default']);
             if ($defaultValue) {
                 return $defaultValue;
             }
@@ -177,7 +182,7 @@ class PlaceholdersRepository
         return $config[$section]['placeholders'];
     }
     
-    public function setPlaceholder($key, $value, $environment = '$default', $variant = '$default')
+    public function setReplacement($key, $value, $environment = '$default', $variant = '$default')
     {
         if (!isset($this->runtimePlaceholders[$key])) {
             $this->runtimePlaceholders[$key] = array();
