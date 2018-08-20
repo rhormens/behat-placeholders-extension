@@ -39,8 +39,8 @@ use Ciandt\Behat\PlaceholdersExtension\Config\PlaceholdersRepository;
 
         if ($argument instanceof PyStringNode) {
             $strings = $argument->getStrings();
-            foreach ($strings as &$string){
-                self::replaceStringPlaceholders($string, $repository);
+            foreach ($strings as $string){
+                $strings[$string] = self::replaceStringPlaceholders($string, $repository);
             }
             return new PyStringNode($strings, $argument->getLine());
         }
